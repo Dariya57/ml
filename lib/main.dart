@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'pose_detector_service.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -30,67 +31,81 @@ class SquatGameScreen extends StatefulWidget {
 }
 
 class _SquatGameScreenState extends State<SquatGameScreen> {
-  CameraController? controller;
-  int score = 0;
+  CameraController? _controller;
+  PoseDetectorService? _poseDetectorService;
+  CameraDescription? _camera;
+  bool _isInitializing = true;
+  final PosePainter _painter = PosePainter();
 
   @override
   void initState() {
     super.initState();
-    initCamera();
+    _initialize();
   }
 
-  Future<void> initCamera() async {
-    // Ищем фронтальную камеру
-    final frontCamera = cameras.firstWhere(
-          (cam) => cam.lensDirection == CameraLensDirection.front,
+  Future<void> _initialize() async {
+    _camera = cameras.firstWhere(
+      (cam) => cam.lensDirection == CameraLensDirection.front,
       orElse: () => cameras.first,
     );
 
-    controller = CameraController(frontCamera, ResolutionPreset.medium);
-    await controller!.initialize();
-    if (mounted) setState(() {});
-  }
+    _poseDetectorService = PoseDetectorService(_painter);
 
-  void _analyzeExercise() {
-    // Заглушка для анализа через OpenCV
+    _controller = CameraController(
+      _camera!,
+      ResolutionPreset.high,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.nv21,
+    );
+
+    await _controller!.initialize();
+    _controller!.startImageStream((image) {
+      if (mounted) {
+        _poseDetectorService!.processImage(image, _camera!).then((_) {
+          setState(() {});
+        });
+      }
+    });
+
     setState(() {
-      score += 10; // +10 баллов за "правильное" приседание
+      _isInitializing = false;
     });
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    _controller?.stopImageStream();
+    _controller?.dispose();
+    _poseDetectorService?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitializing) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Squat Challenge')),
       body: Column(
         children: [
           Expanded(
             flex: 3,
-            child: controller == null || !controller!.value.isInitialized
-                ? const Center(child: CircularProgressIndicator())
-                : CameraPreview(controller!),
+            child: CameraPreview(
+              _controller!,
+              child: CustomPaint(painter: _painter),
+            ),
           ),
           Expanded(
             flex: 1,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Очки: $score',
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _analyzeExercise,
-                  child: const Text('Сделать присед'),
-                ),
-              ],
+            child: Center(
+              child: Text(
+                'Приседания: ${_poseDetectorService?.squatCount ?? 0}',
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
             ),
           )
         ],
