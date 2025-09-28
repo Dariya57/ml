@@ -36,6 +36,7 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
   CameraDescription? _camera;
   bool _isInitializing = true;
   final PosePainter _painter = PosePainter();
+  int _squatCount = 0;
 
   @override
   void initState() {
@@ -51,6 +52,15 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
 
     _poseDetectorService = PoseDetectorService(_painter);
 
+    // Подписываемся на обновления от Painter
+    _painter.addListener(() {
+      if (mounted) {
+        setState(() {
+          _squatCount = _poseDetectorService!.squatCount;
+        });
+      }
+    });
+
     _controller = CameraController(
       _camera!,
       ResolutionPreset.high,
@@ -60,11 +70,7 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
 
     await _controller!.initialize();
     _controller!.startImageStream((image) {
-      if (mounted) {
-        _poseDetectorService!.processImage(image, _camera!).then((_) {
-          setState(() {});
-        });
-      }
+      _poseDetectorService!.processImage(image, _camera!);
     });
 
     setState(() {
@@ -77,6 +83,7 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
     _controller?.stopImageStream();
     _controller?.dispose();
     _poseDetectorService?.dispose();
+    _painter.removeListener(() {}); // Отписываемся от слушателя
     super.dispose();
   }
 
@@ -87,24 +94,31 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Squat Challenge')),
       body: Column(
         children: [
           Expanded(
             flex: 3,
-            child: CameraPreview(
-              _controller!,
-              child: CustomPaint(painter: _painter),
+            // Используем AnimatedBuilder, чтобы перерисовывать только то, что нужно
+            child: AnimatedBuilder(
+              animation: _painter,
+              builder: (context, child) {
+                return CameraPreview(
+                  _controller!,
+                  child: CustomPaint(painter: _painter),
+                );
+              },
             ),
           ),
           Expanded(
             flex: 1,
             child: Center(
               child: Text(
-                'Приседания: ${_poseDetectorService?.squatCount ?? 0}',
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                'Приседания: $_squatCount',
+                style:
+                    const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
             ),
           )

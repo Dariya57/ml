@@ -3,7 +3,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
-// Класс-хелпер для правильного пересчета координат
 class CoordinateTranslator {
   static Offset transform(
       {required PoseLandmark landmark,
@@ -14,8 +13,16 @@ class CoordinateTranslator {
     final double x = landmark.x;
     final double y = landmark.y;
 
-    final double hRatio = canvasSize.width / (rotation == InputImageRotation.rotation90deg || rotation == InputImageRotation.rotation270deg ? imageSize.height : imageSize.width);
-    final double vRatio = canvasSize.height / (rotation == InputImageRotation.rotation90deg || rotation == InputImageRotation.rotation270deg ? imageSize.width : imageSize.height);
+    final double hRatio = canvasSize.width /
+        (rotation == InputImageRotation.rotation90deg ||
+                rotation == InputImageRotation.rotation270deg
+            ? imageSize.height
+            : imageSize.width);
+    final double vRatio = canvasSize.height /
+        (rotation == InputImageRotation.rotation90deg ||
+                rotation == InputImageRotation.rotation270deg
+            ? imageSize.width
+            : imageSize.height);
 
     double scaledX = x * hRatio;
     double scaledY = y * vRatio;
@@ -39,14 +46,15 @@ class PoseDetectorService {
   PoseDetectorService(this.painter)
       : _poseDetector = PoseDetector(
           options: PoseDetectorOptions(
-            model: PoseDetectionModel.base, // ИСПОЛЬЗУЕМ ВСТРОЕННУЮ ЛЕГКУЮ МОДЕЛЬ
+            model: PoseDetectionModel.base,
             mode: PoseDetectionMode.stream,
           ),
         );
 
   int get squatCount => _squatCount;
 
-  Future<void> processImage(CameraImage image, CameraDescription camera) async {
+  Future<void> processImage(
+      CameraImage image, CameraDescription camera) async {
     if (_isProcessing) return;
     _isProcessing = true;
 
@@ -120,7 +128,8 @@ class PoseDetectorService {
   }
 }
 
-class PosePainter extends CustomPainter {
+// ИЗМЕНЕНИЕ: PosePainter теперь наследуется от ChangeNotifier, чтобы сообщать об обновлениях
+class PosePainter extends CustomPainter with ChangeNotifier {
   Pose? _pose;
   Size? _imageSize;
   InputImageRotation _rotation = InputImageRotation.rotation0deg;
@@ -132,11 +141,13 @@ class PosePainter extends CustomPainter {
     _imageSize = imageSize;
     _rotation = rotation;
     _cameraLensDirection = direction;
+    notifyListeners(); // Сообщаем виджету, что нужно перерисоваться
   }
 
   void clear() {
     _pose = null;
     _imageSize = null;
+    notifyListeners();
   }
 
   @override
@@ -196,6 +207,6 @@ class PosePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant PosePainter oldDelegate) {
-    return _pose != oldDelegate._pose || _imageSize != oldDelegate._imageSize;
+    return true;
   }
 }
