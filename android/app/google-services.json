@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "482988285664",
+    "project_id": "yummy-ec4ac",
+    "storage_bucket": "yummy-ec4ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482988285664:android:b731ed6080830bd1597a85",
+        "android_client_info": {
+          "package_name": "com.example.pp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD94Rvl9LTK-gdVDceVoeng4nDpl-j7Zf0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
