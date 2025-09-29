@@ -128,7 +128,7 @@ class PoseDetectorService {
   }
 }
 
-// ИЗМЕНЕНИЕ: PosePainter теперь наследуется от ChangeNotifier, чтобы сообщать об обновлениях
+// PosePainter теперь наследуется от ChangeNotifier, чтобы сообщать об обновлениях
 class PosePainter extends CustomPainter with ChangeNotifier {
   Pose? _pose;
   Size? _imageSize;
