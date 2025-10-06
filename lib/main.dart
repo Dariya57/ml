@@ -32,11 +32,9 @@ class SquatGameScreen extends StatefulWidget {
 
 class _SquatGameScreenState extends State<SquatGameScreen> {
   CameraController? _controller;
-  PoseDetectorService? _poseDetectorService;
   CameraDescription? _camera;
   bool _isInitializing = true;
-  final PosePainter _painter = PosePainter();
-  int _squatCount = 0;
+  final PoseDetectorService _poseDetectorService = PoseDetectorService();
 
   @override
   void initState() {
@@ -50,17 +48,6 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
       orElse: () => cameras.first,
     );
 
-    _poseDetectorService = PoseDetectorService(_painter);
-
-    // Подписываемся на обновления от Painter
-    _painter.addListener(() {
-      if (mounted) {
-        setState(() {
-          _squatCount = _poseDetectorService!.squatCount;
-        });
-      }
-    });
-
     _controller = CameraController(
       _camera!,
       ResolutionPreset.high,
@@ -70,7 +57,9 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
 
     await _controller!.initialize();
     _controller!.startImageStream((image) {
-      _poseDetectorService!.processImage(image, _camera!);
+      if (mounted) {
+        _poseDetectorService.processImage(image, _camera!);
+      }
     });
 
     setState(() {
@@ -82,43 +71,63 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
   void dispose() {
     _controller?.stopImageStream();
     _controller?.dispose();
-    _poseDetectorService?.dispose();
-    _painter.removeListener(() {}); // Отписываемся от слушателя
+    _poseDetectorService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isInitializing) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Squat Challenge')),
       body: Column(
         children: [
           Expanded(
             flex: 3,
-            // Используем AnimatedBuilder, чтобы перерисовывать только то, что нужно
-            child: AnimatedBuilder(
-              animation: _painter,
-              builder: (context, child) {
-                return CameraPreview(
-                  _controller!,
-                  child: CustomPaint(painter: _painter),
-                );
-              },
+            child: CameraPreview(
+              _controller!,
+              child: ValueListenableBuilder<PoseData?>(
+                valueListenable: _poseDetectorService.poseDataNotifier,
+                builder: (context, poseData, child) {
+                  return CustomPaint(painter: PosePainter(poseData));
+                },
+              ),
             ),
           ),
           Expanded(
             flex: 1,
             child: Center(
-              child: Text(
-                'Приседания: $_squatCount',
-                style:
-                    const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              child: ValueListenableBuilder<ExerciseFeedback>(
+                valueListenable: _poseDetectorService.feedbackNotifier,
+                builder: (context, feedback, child) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Приседания: ${feedback.repCount}',
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Качество последнего: ${feedback.qualityScore.toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      const SizedBox(height: 8),
+                      if (feedback.feedbackText.isNotEmpty)
+                        Text(
+                          feedback.feedbackText.join('\n'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           )
