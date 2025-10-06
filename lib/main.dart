@@ -80,13 +80,14 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
     if (_isInitializing) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    
+
+    // Используем Stack, чтобы наложить виджеты друг на друга
     return Scaffold(
-      appBar: AppBar(title: const Text('Squat Challenge')),
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand, // Растягиваем Stack на весь экран
         children: [
-          Expanded(
-            flex: 3,
+          // 1. Камера на весь фон
+          SizedBox.expand(
             child: CameraPreview(
               _controller!,
               child: ValueListenableBuilder<PoseData?>(
@@ -97,38 +98,79 @@ class _SquatGameScreenState extends State<SquatGameScreen> {
               ),
             ),
           ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: ValueListenableBuilder<ExerciseFeedback>(
-                valueListenable: _poseDetectorService.feedbackNotifier,
-                builder: (context, feedback, child) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Приседания: ${feedback.repCount}',
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+
+          // 2. Текст и информация поверх камеры
+          Positioned.fill(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Размещаем элементы сверху и снизу
+              children: [
+                // Верхний блок: Заголовок
+                SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    child: const Text(
+                      'Squat Challenge',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [ // ВОТ ТА САМАЯ ЧЕРНАЯ ОБВОДКА
+                          Shadow(blurRadius: 1.0, color: Colors.black, offset: Offset(1.0, 1.0)),
+                          Shadow(blurRadius: 1.0, color: Colors.black, offset: Offset(-1.0, -1.0)),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Качество последнего: ${feedback.qualityScore.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      const SizedBox(height: 8),
-                      if (feedback.feedbackText.isNotEmpty)
-                        Text(
-                          feedback.feedbackText.join('\n'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
-                        ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ),
+                ),
+
+                // Нижний блок: Счет и фидбэк
+                SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.all(24.0),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.4), // Полупрозрачный фон
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: ValueListenableBuilder<ExerciseFeedback>(
+                      valueListenable: _poseDetectorService.feedbackNotifier,
+                      builder: (context, feedback, child) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min, // Чтобы контейнер не растягивался
+                          children: [
+                            Text(
+                              'Приседания: ${feedback.repCount}',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [Shadow(blurRadius: 2.0, color: Colors.black, offset: Offset(1.0, 1.0))],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Качество последнего: ${feedback.qualityScore.toStringAsFixed(0)}%',
+                              style: const TextStyle(fontSize: 20, color: Colors.white70),
+                            ),
+                            const SizedBox(height: 12),
+                            if (feedback.feedbackText.isNotEmpty)
+                              Text(
+                                feedback.feedbackText.join('\n'),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [Shadow(blurRadius: 2.0, color: Colors.black, offset: Offset(1.0, 1.0))],
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           )
         ],
