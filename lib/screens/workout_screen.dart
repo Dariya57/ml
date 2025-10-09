@@ -3,13 +3,21 @@ import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
 import '../services/pose_detector_service.dart';
 import '../painters/pose_painter.dart';
-import '../models/exercise_data.dart';
+import '../models/data_models.dart';
 import '../providers/workout_provider.dart';
 import 'results_screen.dart';
 
 class WorkoutScreen extends StatefulWidget {
   final int targetReps;
-  const WorkoutScreen({super.key, required this.targetReps});
+  final ExerciseType exerciseType;
+  final String exerciseName;
+
+  const WorkoutScreen({
+    super.key, 
+    required this.targetReps, 
+    required this.exerciseType,
+    required this.exerciseName,
+  });
 
   @override
   State<WorkoutScreen> createState() => _WorkoutScreenState();
@@ -19,12 +27,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   CameraController? _controller;
   CameraDescription? _camera;
   bool _isInitializing = true;
-  final PoseDetectorService _poseDetectorService = PoseDetectorService();
+  late PoseDetectorService _poseDetectorService;
 
   @override
   void initState() {
     super.initState();
+    _poseDetectorService = PoseDetectorService();
     _poseDetectorService.feedbackNotifier.addListener(_onFeedback);
+    _poseDetectorService.setExercise(widget.exerciseType);
     _initialize();
   }
 
@@ -32,12 +42,15 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     final feedback = _poseDetectorService.feedbackNotifier.value;
     if (feedback.repCount >= widget.targetReps) {
       _controller?.stopImageStream();
-      final avgQuality = _poseDetectorService.getAverageQuality();
-      context.read<WorkoutProvider>().completeWorkout('Приседания', feedback.repCount, avgQuality);
+      final results = _poseDetectorService.getWorkoutResults();
+      context.read<WorkoutProvider>().completeWorkout(widget.exerciseName, feedback.repCount, results['avgQuality']);
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ResultsScreen(reps: feedback.repCount, avgQuality: avgQuality)),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => ResultsScreen(
+          reps: feedback.repCount,
+          avgQuality: results['avgQuality'],
+          errorCounts: results['errorCounts'],
+        )),
       );
     }
   }
@@ -104,7 +117,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               if (!feedback.isCalibrated) {
                 return const CalibrationOverlay();
               }
-              return WorkoutOverlay(feedback: feedback);
+              return WorkoutOverlay(feedback: feedback, targetReps: widget.targetReps);
             },
           )
         ],
@@ -121,10 +134,13 @@ class CalibrationOverlay extends StatelessWidget {
     return Container(
       color: Colors.black.withOpacity(0.7),
       child: const Center(
-        child: Text(
-          'Встаньте так, чтобы вас было видно полностью',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text(
+            'Встаньте так, чтобы вас было видно полностью в кадре',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
@@ -133,39 +149,33 @@ class CalibrationOverlay extends StatelessWidget {
 
 class WorkoutOverlay extends StatelessWidget {
   final ExerciseFeedback feedback;
-  const WorkoutOverlay({super.key, required this.feedback});
+  final int targetReps;
+  const WorkoutOverlay({super.key, required this.feedback, required this.targetReps});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const SizedBox(),
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
         Text(
-          '${feedback.repCount}',
+          '${feedback.repCount} / $targetReps',
           style: const TextStyle(
-            fontSize: 150,
+            fontSize: 120,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             shadows: [Shadow(blurRadius: 10.0, color: Colors.black, offset: Offset(2.0, 2.0))],
           ),
         ),
-        if (feedback.feedbackText.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            margin: const EdgeInsets.only(bottom: 80),
-            decoration: BoxDecoration(
-              color: Colors.redAccent.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              feedback.feedbackText.join('\n'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          )
-        else
-          const SizedBox(height: 80),
+        const SizedBox(height: 120),
       ],
     );
   }

@@ -25,7 +25,25 @@ class MyApp extends StatelessWidget {
       create: (context) => WorkoutProvider(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark(),
+        theme: ThemeData.dark().copyWith(
+          scaffoldBackgroundColor: const Color(0xFF121212),
+          appBarTheme: const AppBarTheme(
+            elevation: 0,
+            backgroundColor: Color(0xFF1F1F1F),
+          ),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            backgroundColor: Color(0xFF1F1F1F),
+            selectedItemColor: Colors.lightBlueAccent,
+            unselectedItemColor: Colors.grey,
+          ),
+          cardTheme: CardThemeData(
+            elevation: 2,
+            color: const Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
         home: seenOnboarding ? const MainScreen() : const OnboardingScreen(),
       ),
     );
@@ -56,12 +74,24 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens.elementAt(_selectedIndex),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Главная'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'План'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Настройки'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_filled),
+            label: 'Главная',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'План',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Настройки',
+          ),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

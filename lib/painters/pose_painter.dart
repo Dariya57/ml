@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
-import '../models/exercise_data.dart';
+import '../models/data_models.dart';
 
 class PosePainter extends CustomPainter {
   final PoseData? poseData;
