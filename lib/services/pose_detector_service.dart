@@ -15,6 +15,12 @@ class PoseDetectorService {
   
   late ExerciseType _currentExercise;
 
+  // НОВЫЕ ПОЛЯ ДЛЯ FPS
+  int _frameCounter = 0;
+  int _lastTimestamp = DateTime.now().millisecondsSinceEpoch;
+  final ValueNotifier<int> fpsNotifier = ValueNotifier(0);
+  // КОНЕЦ НОВЫХ ПОЛЕЙ
+
   final ValueNotifier<ExerciseFeedback> feedbackNotifier = ValueNotifier(ExerciseFeedback());
   final ValueNotifier<PoseData?> poseDataNotifier = ValueNotifier(null);
 
@@ -34,6 +40,17 @@ class PoseDetectorService {
   Future<void> processImage(CameraImage image, CameraDescription camera) async {
     if (_isProcessing) return;
     _isProcessing = true;
+
+    // ЛОГИКА ПОДСЧЕТА FPS
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    _frameCounter++;
+    if (currentTime - _lastTimestamp >= 1000) {
+      fpsNotifier.value = _frameCounter;
+      _frameCounter = 0;
+      _lastTimestamp = currentTime;
+    }
+    // КОНЕЦ ЛОГИКИ FPS
+
     final inputImage = _inputImageFromCameraImage(image, camera);
     if (inputImage == null) {
       _isProcessing = false; return;
@@ -57,6 +74,7 @@ class PoseDetectorService {
     _isProcessing = false;
   }
   
+  // ... (остальной код _analyzePose, _calibrate и т.д. остается без изменений)
   void _analyzePose(Pose pose) {
     switch (_currentExercise) {
       case ExerciseType.squats: _analyzeSquat(pose); break;
@@ -199,5 +217,6 @@ class PoseDetectorService {
     _poseDetector.close();
     feedbackNotifier.dispose();
     poseDataNotifier.dispose();
+    fpsNotifier.dispose(); // НЕ ЗАБЫВАЕМ УДАЛИТЬ
   }
 }
