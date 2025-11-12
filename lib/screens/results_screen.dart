@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/strings.dart';
 
 class ResultsScreen extends StatelessWidget {
   final int reps;
@@ -13,6 +14,7 @@ class ResultsScreen extends StatelessWidget {
       return Text('"${entry.key}" - ${entry.value} раз(а)', style: const TextStyle(color: Colors.redAccent));
     }).toList();
 
+    final S = AppStrings.of(context);
     return Scaffold(
       body: Center(
         child: Padding(
@@ -22,21 +24,21 @@ class ResultsScreen extends StatelessWidget {
             children: [
               const Icon(Icons.check_circle, color: Colors.greenAccent, size: 100),
               const SizedBox(height: 24),
-              const Text('Отлично!', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
+              Text(S.resultGreat, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              Text('Выполнено: $reps повторений'),
-              Text('Среднее качество: ${avgQuality.toStringAsFixed(0)}%'),
+              Text(S.repsDone(reps)),
               const SizedBox(height: 16),
               if (errorWidgets.isNotEmpty) ...[
+                // Оставляем заголовок ошибок на языке интерфейса. Можно добавить ключ при необходимости
                 const Text('Основные ошибки:', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...errorWidgets,
               ],
               const SizedBox(height: 16),
-              const Text('+10 💎 заработано!'),
+              Text(S.earnedDiamonds),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const Text('Готово'),
+                child: Text(S.done),
               )
             ],
           ),

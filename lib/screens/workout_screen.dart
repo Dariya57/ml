@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import '../services/pose_detector_service.dart';
 import '../painters/pose_painter.dart';
 import '../models/data_models.dart';
 import '../providers/workout_provider.dart';
 import 'results_screen.dart';
+import '../utils/strings.dart';
 
 class WorkoutScreen extends StatefulWidget {
   final int targetReps;
@@ -33,7 +35,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   // Метрики производительности
   double _fps = 0;
-  double _cpuUsage = 0;
   double _ramUsage = 0;
   int _frameCount = 0;
   DateTime _lastFpsUpdate = DateTime.now();
@@ -58,24 +59,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   Future<void> _updateSystemMetrics() async {
     try {
       if (Platform.isAndroid || Platform.isLinux) {
-        // Чтение /proc/stat для CPU
-        final cpuFile = File('/proc/stat');
-        if (await cpuFile.exists()) {
-          final lines = await cpuFile.readAsLines();
-          if (lines.isNotEmpty) {
-            final cpuLine = lines[0].split(RegExp(r'\s+'));
-            if (cpuLine.length > 4) {
-              final user = int.tryParse(cpuLine[1]) ?? 0;
-              final system = int.tryParse(cpuLine[3]) ?? 0;
-              final idle = int.tryParse(cpuLine[4]) ?? 0;
-              final total = user + system + idle;
-              if (total > 0) {
-                _cpuUsage = ((user + system) / total * 100).clamp(0, 100);
-              }
-            }
-          }
-        }
-
         // Чтение /proc/meminfo для RAM
         final memFile = File('/proc/meminfo');
         if (await memFile.exists()) {
@@ -219,14 +202,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       fontSize: 14,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    'CPU: ${_cpuUsage.toStringAsFixed(1)}%',
+                    'Latency: ${_poseDetectorService.lastLatencyMs.value.toStringAsFixed(1)} ms (avg ${_poseDetectorService.avgLatencyMs.value.toStringAsFixed(1)})',
                     style: const TextStyle(
-                      color: Colors.blueAccent,
+                      color: Colors.cyanAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     'RAM: ${_ramUsage.toStringAsFixed(1)}%',
                     style: const TextStyle(
@@ -265,14 +250,22 @@ class CalibrationOverlay extends StatelessWidget {
       child: const Center(
         child: Padding(
           padding: EdgeInsets.all(24.0),
-          child: Text(
-            'Встаньте так, чтобы вас было видно полностью в кадре',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
+          child: _CalibrationText(),
         ),
       ),
+    );
+  }
+}
+
+class _CalibrationText extends StatelessWidget {
+  const _CalibrationText();
+  @override
+  Widget build(BuildContext context) {
+    final S = AppStrings.of(context);
+    return Text(
+      '${S.fullBodyRequired}.\n${S.stepBackHint}.',
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_blocker_provider.dart';
 import '../providers/workout_provider.dart';
+import '../utils/strings.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -34,13 +35,14 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final workoutProvider = context.watch<WorkoutProvider>();
 
+    final S = AppStrings.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Магазин'),
+        title: Text(S.navStore),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            tooltip: 'Настройка блокировки',
+            tooltip: S.blockingSetup,
             onPressed: () {
               Navigator.pushNamed(context, '/blocker-setup');
             },
@@ -57,10 +59,7 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Все приложения'),
-            Tab(text: 'Заблокированные'),
-          ],
+          tabs: [Tab(text: S.allApps), Tab(text: S.blockedApps)],
         ),
       ),
       body: TabBarView(
@@ -82,7 +81,7 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
         }
 
         if (appBlockerProvider.installedApps.isEmpty) {
-          return const Center(child: Text('Приложения не найдены'));
+          return Center(child: Text(AppStrings.of(context).appsNotFound));
         }
 
         return ListView.builder(
@@ -116,13 +115,10 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
         final workoutProvider = context.watch<WorkoutProvider>();
 
         if (appBlockerProvider.blockedApps.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Text(
-                'Здесь будут отображаться заблокированные приложения.\n\nПерейдите на вкладку "Все приложения", чтобы выбрать приложения для блокировки.',
-                textAlign: TextAlign.center,
-              ),
+              padding: const EdgeInsets.all(24.0),
+              child: Text(AppStrings.of(context).emptyBlockedTitle, textAlign: TextAlign.center),
             ),
           );
         }
@@ -131,19 +127,58 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
           itemCount: appBlockerProvider.blockedApps.length,
           itemBuilder: (context, index) {
             final blockedApp = appBlockerProvider.blockedApps[index];
+            final remainingSeconds = blockedApp.getRemainingSeconds();
+            final minutes = remainingSeconds ~/ 60;
+            final seconds = remainingSeconds % 60;
             
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: ExpansionTile(
-                leading: const Icon(Icons.block, color: Colors.redAccent),
+                leading: Icon(
+                  remainingSeconds > 0 ? Icons.lock_open : Icons.block,
+                  color: remainingSeconds > 0 ? Colors.green : Colors.redAccent,
+                ),
                 title: Text(blockedApp.appName),
-                subtitle: Text('Разблокировано: ${blockedApp.unlockedMinutes} мин'),
+                subtitle: remainingSeconds > 0
+                    ? Text(
+                        '${AppStrings.of(context).unlocked}: ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Text(AppStrings.of(context).blocked),
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Text('Купить минуты разблокировки:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        if (remainingSeconds > 0) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.access_time, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${AppStrings.of(context).timeLeft}: ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        Text(AppStrings.of(context).buyUnlockMinutes, style: const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
@@ -178,11 +213,9 @@ class _StoreScreenState extends State<StoreScreen> with SingleTickerProviderStat
       onPressed: canAfford ? () {
         workoutProvider.spendCurrency(cost);
         appBlockerProvider.addMinutesToApp(packageName, minutes);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Куплено $minutes мин за $cost 💎')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.of(context).buyMinutes(minutes, cost))));
       } : null,
-      child: Text('$minutes мин\n$cost 💎', textAlign: TextAlign.center),
+      child: Text(AppStrings.of(context).minutesPriceLabel(minutes, cost), textAlign: TextAlign.center),
     );
   }
 }

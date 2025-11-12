@@ -38,6 +38,7 @@ class WorkoutProvider with ChangeNotifier {
     }
 
     _userProfile.name = prefs.getString('name') ?? 'Спортсмен';
+    _userProfile.lastName = prefs.getString('lastName') ?? '';
     _userProfile.age = prefs.getInt('age') ?? 20;
     _userProfile.weight = prefs.getInt('weight') ?? 70;
     _userProfile.height = prefs.getInt('height') ?? 175;
@@ -54,6 +55,7 @@ class WorkoutProvider with ChangeNotifier {
     _userProfile = profile;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('name', profile.name);
+    await prefs.setString('lastName', profile.lastName);
     await prefs.setInt('age', profile.age);
     await prefs.setInt('weight', profile.weight);
     await prefs.setInt('height', profile.height);

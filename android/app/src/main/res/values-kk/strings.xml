@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FitAI</string>
+    <string name="accessibility_service_description">Қолданбаларды бұғаттау қызметі. Жаттығу кезінде қолданбаларды бұғаттау үшін қолжетімділік беріңіз.</string>
+
+    <string name="overlay_blocked_title">Қол жеткізу шектелді</string>
+    <string name="overlay_blocked_subtitle">Бұл қолданба FitAI арқылы бұғатталған</string>
+    <string name="overlay_open_fitai">FitAI ашу</string>
+    <string name="overlay_go_home">Басты бетке</string>
+</resources>
+

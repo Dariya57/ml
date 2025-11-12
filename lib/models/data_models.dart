@@ -32,11 +32,12 @@ class WorkoutSession {
 
 class UserProfile {
   String name;
+  String lastName;
   int age;
   int weight;
   int height;
   String gender;
   UserGoal goal;
   String? imagePath;
-  UserProfile({this.name = 'Спортсмен', this.age = 20, this.weight = 70, this.height = 175, this.gender = 'Мужской', this.goal = UserGoal.maintain, this.imagePath});
+  UserProfile({this.name = 'Спортсмен', this.lastName = '', this.age = 20, this.weight = 70, this.height = 175, this.gender = 'Мужской', this.goal = UserGoal.maintain, this.imagePath});
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FitAI</string>
+    <string name="accessibility_service_description">Сервис блокировки приложений. Разрешите доступ для блокировки приложений во время тренировок.</string>
+
+    <string name="overlay_blocked_title">Доступ запрещён</string>
+    <string name="overlay_blocked_subtitle">Приложение заблокировано FitAI</string>
+    <string name="overlay_open_fitai">Открыть FitAI</string>
+    <string name="overlay_go_home">На главный экран</string>
+</resources>
+

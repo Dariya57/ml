@@ -3,6 +3,10 @@ import 'package:provider/provider.dart'; // <-- ВОТ ИСПРАВЛЕНИЕ (�
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/workout_provider.dart';
 import 'providers/app_blocker_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/locale_provider.dart';
+import 'utils/strings.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/app_blocker_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/store_screen.dart';
@@ -28,27 +32,29 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => WorkoutProvider()),
         ChangeNotifierProvider(create: (context) => AppBlockerProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => LocaleProvider()),
       ],
-      child: MaterialApp(
+      child: Consumer2<ThemeProvider, LocaleProvider>(builder: (context, theme, locale, _) {
+        return MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: ThemeData.dark().copyWith(
-          scaffoldBackgroundColor: const Color(0xFF121212),
-          appBarTheme: const AppBarTheme(
-            elevation: 0,
-            backgroundColor: Color(0xFF1F1F1F),
-          ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Color(0xFF1F1F1F),
-            selectedItemColor: Colors.lightBlueAccent,
-            unselectedItemColor: Colors.grey,
-          ),
-        ),
+        theme: theme.lightTheme,
+        darkTheme: theme.darkTheme,
+        themeMode: theme.themeMode,
+        locale: locale.locale,
+        supportedLocales: locale.supportedLocales,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         routes: {
           '/': (context) => seenOnboarding ? const MainScreen() : const OnboardingScreen(),
           '/blocker-setup': (context) => const BlockerSetupScreen(),
         },
         initialRoute: '/',
-      ),
+        );
+      }),
     );
   }
 }
@@ -103,18 +109,18 @@ class _MainScreenState extends State<MainScreen> {
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home_filled),
-            label: 'Главная',
+            label: AppStrings.of(context).navHome,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.storefront_outlined),
-            label: 'Магазин',
+            label: AppStrings.of(context).navStore,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Настройки',
+            label: AppStrings.of(context).navSettings,
           ),
         ],
         currentIndex: _selectedIndex,

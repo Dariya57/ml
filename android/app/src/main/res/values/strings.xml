@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FitAI</string>
+    <string name="accessibility_service_description">App blocking service. Grant access to block apps during workouts.</string>
+
+    <string name="overlay_blocked_title">Access denied</string>
+    <string name="overlay_blocked_subtitle">This app is blocked by FitAI</string>
+    <string name="overlay_open_fitai">Open FitAI</string>
+    <string name="overlay_go_home">Go to Home</string>
+</resources>
+
